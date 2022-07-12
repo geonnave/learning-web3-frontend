@@ -21,7 +21,7 @@ function App() {
         <p>
           {/* <button type="button" onClick={() => setCount((count) => count + 1)}> */}
           <button type="button" onClick={connectToMetamask}>
-            Connect to Metamask: {isConnected.selectedAddress !== undefined ? "connected" : "disconneted"}
+            Connect to Metamask: {isConnected.selectedAddress === undefined ? "disconneted" : isConnected.selectedAddress}
           </button>
         </p>
       </header>
