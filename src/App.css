@@ -41,6 +41,6 @@ button {
   font-size: calc(10px + 2vmin);
 }
 
-main p {
-  font-size: 32px;
+main {
+  font-size: 24px;
 }

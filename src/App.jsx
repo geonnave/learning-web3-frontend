@@ -1,81 +1,76 @@
 import { useEffect, useState } from 'react'
 import { ethers } from "ethers";
 import usdcAbi from "./abis/usdc"
-// import { BigNumberish } from 'ethers';
-import logo from './logo.svg'
 import './App.css'
 
-function ContractReader({provider}) {
-  const [contractState, setContractState] = useState({
-    name: "",
-    ethBalance: "",
-    balanceHuman: "",
-    balance: "",
-    decimals: -1
+
+function BalanceFetcher({provider}) {
+  const [queryState, setQueryState] = useState({
+    tokenAddr: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    userAddr: "0x9bf2d9db244785131b13e85625fcf5ab1dd5d9c3",
   });
 
-  // You can also use an ENS name for the contract address
-  const usdcAddress = "0x7079f3762805CFf9C979a5bDC6f5648bCFEE76C8";
-  // The Contract object
-  const usdcContract = new ethers.Contract(usdcAddress, usdcAbi, provider);
+  const [resultState, setResultState] = useState({
+    tokenName: "",
+    userBalance: "",
+    userBalanceHuman: "",
+  });
 
-  const userAddr = "0x0fCCe9C7c1a7C31653fd4C61dAF818d9705Dbb09";
+  let fetchBalance = async () => {
+    const usdcContract = new ethers.Contract(queryState.tokenAddr, usdcAbi, provider);
 
-  const signer = provider.getSigner()
+    let name = await usdcContract.name();
+    let balance = await usdcContract.balanceOf(queryState.userAddr)
+    let decimals = await usdcContract.decimals()
+    let balanceHuman = balance / (10**decimals)
 
-  useEffect(() => {
-    async function getContractInfo() {
-      let name = await usdcContract.name();
-      let balance = await usdcContract.balanceOf(userAddr)
-      let decimals = await usdcContract.decimals()
-      let balanceHuman = balance / (10**decimals)
+    setResultState({
+      tokenName: name,
+      userBalance: balance,
+      userBalanceHuman: balanceHuman,
+    })
+  }
 
-      let ethBalance = await provider.getBalance(userAddr)
-      ethBalance = ethers.utils.formatEther(ethBalance)
+  // useEffect(() => {
+  //   fetchBalance();
+  // }, []);
 
-      setContractState({
-        name: name,
-        balance: balance,
-        balanceHuman: balanceHuman,
-        ethBalance: ethBalance,
-        decimals: decimals
-      })
-    }
-    getContractInfo();
-  }, []);
+  let handleSubmit = async (event) => {
+    console.log(queryState)
+    fetchBalance();
+  }
 
-  let sendEth = async () => {
-    console.log("Called sendEth")
-    const tx = signer.sendTransaction({
-        to: "0x0fCCe9C7c1a7C31653fd4C61dAF818d9705Dbb09",
-        value: ethers.utils.parseEther("0.001")
-    });
-    console.log("Will send tx")
-    console.log(tx)
-    // await tx()
+  let setTokenAddr = (event) => {
+    console.log(event)
+    setQueryState({...queryState, tokenAddr: event.target.value})
+  }
+
+  let setUserAddr = (event) => {
+    setQueryState({...queryState, userAddr: event.target.value})
   }
 
   return <div>
+    <br/>
+    <label>
+      Token ERC20 Address:
+      <input type="text" value={queryState.tokenAddr} onChange={setTokenAddr} />
+    </label>
+    <br/>
+    <br/>
+    <label>
+      User Address:
+      <input type="text" value={queryState.userAddr} onChange={setUserAddr} />
+    </label>
+    <br/>
+    <br/>
+    <button onClick={handleSubmit}>Fetch Balance</button>
     <p>
-      Contrato: {contractState.name}
+      Balanço: {resultState.userBalanceHuman.toString()}
     </p>
-    <p>
-      Carteira: {userAddr}
-    </p>
-    <p>
-      Balanço: {contractState.balanceHuman.toString()}
-    </p>
-    <p>
-      Balanço raw: {contractState.balance.toString()}
-    </p>
-    <p>
-      Balanço eth: {contractState.ethBalance}
-    </p>
-    <button type="button" onClick={sendEth}>
-      Send eth
-    </button>
   </div>
 }
+
+
 
 
 function App() {
@@ -90,16 +85,17 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <p>Hello React + Ethereum!</p>
-        <button type="button" onClick={connectToMetamask}>
-            Connect to Metamask {providerState.isConnected ? "(connected)" : "(disconnected)"}
-          </button>
+        <p>Learning Web3</p>
+        <div>
+          Metamask is {providerState.isConnected ? "connected" : "disconnected"}
+        </div>
+        <button type="button" onClick={connectToMetamask} disabled={providerState.isConnected}>connect</button>
         <p>
-          Address: {providerState.selectedAddress}
+          {providerState.isConnected ? `Connected Address: ${providerState.selectedAddress}` : ""}
         </p>
       </header>
       <main>
-          {providerState.isConnected ? <ContractReader provider={providerState.provider}/> : "ContractReader will appear here"}
+          {providerState.isConnected ? <BalanceFetcher provider={providerState.provider}/> : ""}
       </main>
     </div>
   )
