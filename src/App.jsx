@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ethers } from "ethers";
 import usdcAbi from "./abis/usdc"
+import apeAbi from "./abis/ape_nft"
 import './App.css'
 
 
@@ -71,6 +72,93 @@ function BalanceFetcher({provider}) {
 }
 
 
+function NFTFetcher({provider}) {
+  const [queryState, setQueryState] = useState({
+    tokenAddr: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+    tokenId: "8911",
+  });
+
+  const [resultState, setResultState] = useState({
+    tokenName: "",
+    image: undefined,
+    imageUrl: "",
+    metadata: {},
+  });
+
+  let fetchNFT = async () => {
+    const nftContract = new ethers.Contract(queryState.tokenAddr, apeAbi, provider);
+
+    console.log(nftContract);
+    let tokenURI = await nftContract.tokenURI(queryState.tokenId);
+    console.log("tokenURI", tokenURI)
+    let res = await fetch(`https://ipfs.io/ipfs/${tokenURI.replace("ipfs://", "")}`)
+    if (!res.ok) {
+      setResultState({
+        ...resultState,
+        tokenName: "Error fetching token data",
+      })
+      return;
+    }
+
+    let data = await res.json();
+    let imgUrl = `https://ipfs.io/ipfs/${data["image"].replace("ipfs://", "")}`;
+    console.log("imgUrl", imgUrl)
+
+    setResultState({
+      tokenName: await nftContract.name(),
+      image: "",
+      imageUrl: imgUrl,
+      metadata: {
+        symbol: await nftContract.symbol(),
+        tokenURI: tokenURI,
+      }
+    })
+  }
+
+  useEffect(() => {
+    fetchNFT();
+  }, []);
+
+  let handleSubmit = async (event) => {
+    console.log(queryState)
+    fetchNFT();
+  }
+
+  let setTokenAddr = (event) => {
+    setQueryState({...queryState, tokenAddr: event.target.value})
+  }
+
+  let setTokenId = (event) => {
+    setQueryState({...queryState, tokenId: event.target.value})
+  }
+
+  let setUserAddr = (event) => {
+    setQueryState({...queryState, userAddr: event.target.value})
+  }
+
+  return <div>
+    <br/>
+    <label>
+      NFT Contract Address:
+      <input type="text" value={queryState.tokenAddr} onChange={setTokenAddr} />
+    </label>
+    <br/>
+    <br/>
+    <label>
+      NFT Token ID:
+      <input type="text" value={queryState.tokenId} onChange={setTokenId} />
+    </label>
+    <br/>
+    <br/>
+    <button onClick={handleSubmit}>Fetch NFT</button>
+    <p>
+      Result: {JSON.stringify(resultState)}
+    </p>
+    <img src={resultState.imageUrl} />
+  </div>
+}
+
+
 
 
 function App() {
@@ -96,6 +184,7 @@ function App() {
       </header>
       <main>
           {providerState.isConnected ? <BalanceFetcher provider={providerState.provider}/> : ""}
+          {providerState.isConnected ? <NFTFetcher provider={providerState.provider}/> : ""}
       </main>
     </div>
   )
