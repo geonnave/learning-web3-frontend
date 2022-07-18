@@ -115,9 +115,9 @@ function NFTFetcher({provider}) {
     })
   }
 
-  useEffect(() => {
-    fetchNFT();
-  }, []);
+  // useEffect(() => {
+  //   fetchNFT();
+  // }, []);
 
   let handleSubmit = async (event) => {
     console.log(queryState)
